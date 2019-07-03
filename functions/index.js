@@ -3,10 +3,22 @@
 const functions = require('firebase-functions')
 const { dialogflow } = require('actions-on-google')
 
+const twilio = require('twilio')(functions.config().lostfound.twilio.sid, functions.config().lostfound.twilio.token)
+
 process.env.DEBUG = 'dialogflow:debug' // enables lib debugging statements
 
+const convertE164 = localNumber => `+81${localNumber.substr(1)}`
+
+const call = async (localNumber) => {
+  const config = functions.config().lostfound
+  const from = config.caller
+  const to = convertE164(localNumber)
+
+  const result = await twilio.studio.flows(config.twilio.flow_sid).executions.create({ from, to })
+  console.log(result.toJSON())
+}
+
 const denyGuest = (conv) => {
-  console.log(conv.user.verification)
   if (conv.user.verification !== 'VERIFIED') {
     // XXX
     conv.close('ゲストには対応していません。')
@@ -50,10 +62,11 @@ const phoneNumberRequest = (conv, params) => {
   conv.ask(`${phoneNumber}を呼び出します。よろしいですか？`)
 }
 
-const phoneCallAccept = (conv) => {
+const phoneCallAccept = async (conv) => {
   if (denyGuest(conv)) return
 
-  conv.ask(`${conv.data.phoneNumber}を呼び出します。`)
+  conv.add(`${conv.data.phoneNumber}を呼び出します。`)
+  await call(conv.data.phoneNumber)
 }
 
 const deleteUserStorage = (conv) => {
