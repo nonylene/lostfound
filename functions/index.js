@@ -1,7 +1,7 @@
-'use strict'
+/* eslint-disable no-param-reassign */
 
 const functions = require('firebase-functions')
-const {dialogflow} = require('actions-on-google')
+const { dialogflow } = require('actions-on-google')
 
 process.env.DEBUG = 'dialogflow:debug' // enables lib debugging statements
 
@@ -11,7 +11,7 @@ const denyGuest = (conv) => {
     // XXX
     conv.close('ゲストには対応していません。')
     return true
-  } 
+  }
   return false
 }
 
@@ -23,7 +23,7 @@ const personRequest = (conv, params) => {
     conv.user.storage.phoneNumbers = {}
   }
 
-  const name = params.name.name
+  const { name } = params.name
   conv.data.name = name
 
   const phoneNumber = conv.user.storage.phoneNumbers[name]
