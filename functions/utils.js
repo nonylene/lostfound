@@ -32,3 +32,15 @@ exports.getColor = (name) => {
 }
 
 exports.dateToJapanese = date => DateTime.fromJSDate(date).setZone('Asia/Tokyo').toFormat('yyyy年M月d日H時m分')
+
+exports.dateScore = (target, start, end) => {
+  const len = end - start
+  if (target > end) {
+    return Math.max(1 - (target - end) / len, 0)
+  }
+  if (target < start) {
+    return Math.max(1 - (start - target) / len, 0)
+  }
+
+  return 1
+}
