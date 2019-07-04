@@ -23,6 +23,10 @@ const TYPES = {
     ask: 'カバーはついていますか？',
     context: 'search_lost-cover',
   },
+  type: {
+    ask: 'スマートフォンですか？フィーチャーフォンですか？',
+    context: 'search_lost-type',
+  },
 }
 
 
@@ -46,7 +50,7 @@ exports.searchLostCoverAnswer = (conv, params) => {
   }
 
   if (endDate - startDate > 7 * day) {
-    conv.contexts.set(TYPES.date.context)
+    conv.contexts.set(TYPES.date.context, 1)
     conv.ask('期間が長すぎます')
     return
   }
@@ -71,6 +75,18 @@ const searchLostCoverAnswer = (conv, cover) => {
 exports.searchLostCoverAnswerYes = conv => searchLostCoverAnswer(conv, true)
 exports.searchLostCoverAnswerNo = conv => searchLostCoverAnswer(conv, false)
 
+exports.searchLostTypeAnswer = (conv, params) => {
+  const { phone } = params
+  if (phone !== 'スマートフォン' && phone !== 'ケータイ') {
+    conv.contexts.set(TYPES.type.context, 1)
+    conv.ask('スマートフォンかケータイで答えてください。')
+    return
+  }
+  const score = Number(phone === 'スマートフォン')
+  conv.add(`あなたのスコアは${score}です。`)
+  // route
+}
+
 exports.searchLostMakerAnswer = (conv, params) => {
   const { maker } = params
   const score = Number(maker === 'SONY')
@@ -93,7 +109,7 @@ exports.searchLostDateAnswer = (conv, params) => {
   }
 
   if (endDate - startDate > 7 * day) {
-    conv.contexts.set(TYPES.date.context)
+    conv.contexts.set(TYPES.date.context, 1)
     conv.ask('期間が長すぎます')
     return
   }
@@ -113,7 +129,7 @@ exports.searchLostColorAnswer = (conv, params) => {
   const { color } = params
   const colorRGB = getColor(color)
   if (!colorRGB) {
-    conv.contexts.set(TYPES.color.context)
+    conv.contexts.set(TYPES.color.context, 1)
     conv.ask('色が認識できませんでした。')
     return
   }
@@ -123,7 +139,7 @@ exports.searchLostColorAnswer = (conv, params) => {
 }
 
 exports.searchLostLocationAnswer = async (conv, params) => {
-  route(conv, TYPES.maker)
+  route(conv, TYPES.type)
   return
   const { location } = params
   try {
