@@ -10,7 +10,7 @@ const {
   initDB, getPhoneNumbersRef, deleteUser, getUserID, getLastLog,
 } = require('./db')
 const {
-  searchLostLocationAnswer, searchLostColorAnswer, searchLostDateAnswer,
+  searchLostLocationAnswer, searchLostColorAnswer, searchLostDateAnswer, searchLostCoverAnswerYes, searchLostCoverAnswerNo,
 } = require('./dialogflow_lostsearch')
 
 const personRequest = async (conv, params) => {
@@ -122,5 +122,7 @@ app.intent('last_log', lastLog)
 app.intent('search_lost-location-answer', searchLostLocationAnswer)
 app.intent('search_lost-color-answer', searchLostColorAnswer)
 app.intent('search_lost-date-answer', searchLostDateAnswer)
+app.intent('search_lost-cover-answer-yes', searchLostCoverAnswerYes)
+app.intent('search_lost-cover-answer-no', searchLostCoverAnswerNo)
 
 exports.dialogFlowApp = app
