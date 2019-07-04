@@ -11,6 +11,8 @@ $ firebase functions:config:set lostfound.twilio.flow_sid=<flow_sid>
 $ firebase functions:config:set lostfound.twilio.sid=<sid>
 $ firebase functions:config:set lostfound.twilio.token=<token>
 $ firebase functions:config:set lostfound.twilio_callback.token=<token>
+$ firebase functions:config:set lostfound.google_map.token=<token>
+$ firebase functions:config:set lostfound.google_map.locationbias=<locationbias>
 ```
 
 ## Deploy
