@@ -2,13 +2,15 @@ const functions = require('firebase-functions')
 
 const twilio = require('twilio')(functions.config().lostfound.twilio.sid, functions.config().lostfound.twilio.token)
 
-const { convertE164 } = require('./utils')
-
-exports.call = async (localNumber) => {
+exports.call = async (userID, globalNumber) => {
   const config = functions.config().lostfound
   const from = config.caller
-  const to = convertE164(localNumber)
+  const to = globalNumber
 
-  const result = await twilio.studio.flows(config.twilio.flow_sid).executions.create({ from, to })
+  const result = await twilio.studio.flows(config.twilio.flow_sid).executions.create({
+    from,
+    to,
+    parameters: { userID },
+  })
   console.log(result.toJSON())
 }

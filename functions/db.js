@@ -11,17 +11,20 @@ const DB_PHONE_NUMBERS = 'phoneNumbers'
 admin.initializeApp(functions.config().firebase)
 const db = admin.firestore()
 
-const getUserRef = conv => db.collection(DB_USERS).doc(conv.user.storage[STORAGE_ID_KEY])
+const getUserID = conv => conv.user.storage[STORAGE_ID_KEY]
 
-const getPhoneNumbersRef = conv => getUserRef(conv).collection(DB_PHONE_NUMBERS)
+const getUserRef = userID => db.collection(DB_USERS).doc(userID)
+
+const getPhoneNumbersRef = userID => getUserRef(userID).collection(DB_PHONE_NUMBERS)
 
 exports.deleteUser = async (conv) => {
   if (STORAGE_ID_KEY in conv.user.storage) {
+    const userID = getUserID(conv)
     // get all phoneNumbers
-    const phoneNumbers = await getPhoneNumbersRef(conv).get()
+    const phoneNumbers = await getPhoneNumbersRef(userID).get()
     const batch = db.batch()
     phoneNumbers.forEach(doc => batch.delete(doc.ref))
-    batch.delete(getUserRef(conv))
+    batch.delete(getUserRef(userID))
     await batch.commit()
 
     conv.user.storage = {}
@@ -39,4 +42,7 @@ exports.initDB = async (conv) => {
   }
 }
 
+exports.setLast = async (userID, last) => getUserRef(userID).set({ last })
+
 exports.getPhoneNumbersRef = getPhoneNumbersRef
+exports.getUserID = getUserID
