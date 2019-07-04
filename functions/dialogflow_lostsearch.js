@@ -71,6 +71,12 @@ const searchLostCoverAnswer = (conv, cover) => {
 exports.searchLostCoverAnswerYes = conv => searchLostCoverAnswer(conv, true)
 exports.searchLostCoverAnswerNo = conv => searchLostCoverAnswer(conv, false)
 
+exports.searchLostMakerAnswer = (conv, params) => {
+  const { maker } = params
+  const score = Number(maker === 'SONY')
+  conv.add(`あなたのスコアは${score}です。`)
+  // route
+}
 
 exports.searchLostDateAnswer = (conv, params) => {
   const { date, datePeriod } = params
@@ -117,7 +123,7 @@ exports.searchLostColorAnswer = (conv, params) => {
 }
 
 exports.searchLostLocationAnswer = async (conv, params) => {
-  route(conv, TYPES.cover)
+  route(conv, TYPES.maker)
   return
   const { location } = params
   try {
