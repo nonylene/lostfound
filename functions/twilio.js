@@ -6,11 +6,12 @@ exports.call = async (userID, globalNumber) => {
   const config = functions.config().lostfound
   const from = config.caller
   const to = globalNumber
+  const requestTimestamp = new Date()
 
   const result = await twilio.studio.flows(config.twilio.flow_sid).executions.create({
     from,
     to,
-    parameters: { userID },
+    parameters: { userID, requestTimestamp },
   })
   console.log(result.toJSON())
 }

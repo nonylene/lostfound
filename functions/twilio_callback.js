@@ -9,12 +9,12 @@ exports.twilioCallbackApp = async (req, res) => {
     return
   }
   const {
-    token, userID, timestamp, ...last
+    token, userID, requestTimestamp, ...last
   } = req.body
   if (token !== functions.config().lostfound.twilio_callback.token) {
     res.status(403).end()
     return
   }
-  await setLast(userID, { timestamp: new Date(timestamp), ...last })
+  await setLast(userID, { requestTimestamp: new Date(requestTimestamp), ...last })
   res.status(200).end()
 }
