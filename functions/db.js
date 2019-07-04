@@ -17,6 +17,14 @@ const getUserRef = userID => db.collection(DB_USERS).doc(userID)
 
 const getPhoneNumbersRef = userID => getUserRef(userID).collection(DB_PHONE_NUMBERS)
 
+exports.getLastLog = async (userID) => {
+  const userDoc = await getUserRef(userID).get()
+  if (!userDoc.exists) {
+    return null
+  }
+  return userDoc.data().last
+}
+
 exports.deleteUser = async (conv) => {
   if (STORAGE_ID_KEY in conv.user.storage) {
     const userID = getUserID(conv)
