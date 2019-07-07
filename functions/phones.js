@@ -54,7 +54,8 @@ exports.getHeuristicFiltered = (conv) => {
     const locScore = locationScore(phone.location, location, viewportLens)
     const dtScore = dateScore(new Date(phone.date), startDate, endDate)
     const clScore = colorScore(phone.color, colorRGB)
-    return locScore + dtScore + clScore > HEURISTIC_SCORE_THRESHOLD && applyFilterIfPresent(conv, phone)
+    return (locScore + dtScore + clScore > HEURISTIC_SCORE_THRESHOLD
+      && applyFilterIfPresent(conv, phone))
   })
 }
 
