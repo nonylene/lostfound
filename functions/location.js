@@ -9,17 +9,40 @@ const MAX = 0.04
 
 class TooLargeError extends Error {}
 
-const calcScore = (viewportLen, len) => {
-  let biasedLen = viewportLen
+const biasedLen = (viewportLen) => {
   if (viewportLen < MIN) {
-    biasedLen *= 1.8
-  } else if (viewportLen < MAX) {
-    biasedLen = (1 + (viewportLen - MIN) / (MAX - MIN) * 0.8) * viewportLen
+    return viewportLen * 1.8
+  } if (viewportLen < MAX) {
+    return (1 + (viewportLen - MIN) / (MAX - MIN) * 0.8) * viewportLen
   }
-  return Math.max(Math.min(1, 2 - len / biasedLen), 0)
+  return viewportLen
 }
 
-const getLocation = async (query) => {
+const calcScore = (viewportLen, len) => Math.max(Math.min(1, 2 - len / viewportLen), 0)
+
+exports.locationScore = (target, location, viewportLens) => {
+  const { lat, lng } = target
+  const { latLen, lngLen } = viewportLens
+
+  const latScore = calcScore(latLen, Math.abs(location.lat - lat))
+  const lngScore = calcScore(lngLen, Math.abs(location.lng - lng))
+  return latScore * lngScore
+}
+
+exports.convertViewPort = ({ northeast, southwest }) => {
+  const latViewport = northeast.lat - southwest.lat
+  const lngViewport = northeast.lng - southwest.lng
+
+  if (latViewport > MAX || lngViewport > MAX) {
+    throw new TooLargeError('Area too large')
+  }
+
+  return { latLen: biasedLen(latViewport), lngLen: biasedLen(lngViewport) }
+}
+
+exports.TooLargeError = TooLargeError
+
+exports.getLocation = async (query) => {
   const response = await googleMapsClient.findPlace({
     input: query,
     inputtype: 'textquery',
@@ -33,21 +56,3 @@ const getLocation = async (query) => {
   }
   return response.json.candidates[0].geometry
 }
-
-exports.locationScore = async (target, query) => {
-  const { lat, lng } = target
-  const { location, viewport } = await getLocation(query)
-  const { northeast, southwest } = viewport
-
-  const latViewport = northeast.lat - southwest.lat
-  const lngViewport = northeast.lng - southwest.lng
-  if (latViewport > MAX || lngViewport > MAX) {
-    throw new TooLargeError('Area too large')
-  }
-
-  const latLen = calcScore(latViewport, Math.abs(location.lat - lat))
-  const lngLen = calcScore(lngViewport, Math.abs(location.lng - lng))
-  return latLen * lngLen
-}
-
-exports.TooLargeError = TooLargeError

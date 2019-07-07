@@ -1,75 +1,69 @@
 /* eslint-disable no-param-reassign */
 
 const {
-  locationScore, TooLargeError,
+  TooLargeError, getLocation, convertViewPort,
 } = require('./location')
 
-const { getColor, colorScore, dateScore } = require('./utils')
+const { getColor } = require('./utils')
+
+const { getHeuristicFiltered, getNextSearchColumn, phoneInfo } = require('./phones')
 
 const TYPES = {
   color: {
+    // gradation
     ask: '携帯電話の色は何ですか？',
     context: 'search_lost-color',
   },
   date: {
+    // gradation
     ask: '拾ったのは何日ですか？',
     context: 'search_lost-date',
   },
   maker: {
+    // 01
     ask: '携帯のメーカーはどこですか？',
     context: 'search_lost-maker',
   },
   cover: {
+    // 01
     ask: 'カバーはついていますか？',
     context: 'search_lost-cover',
   },
   type: {
+    // 01
     ask: 'スマートフォンですか？フィーチャーフォンですか？',
     context: 'search_lost-type',
   },
 }
 
+const sayLast = (conv, filtered) => {
+  const foo = filtered.map((phone, i) => `${i + 1}個目は${phoneInfo(conv, phone)}`).join()
+  conv.ask(`${filtered.length}件マッチしました。${foo}`)
+}
 
 const route = (conv, type) => {
   conv.contexts.set(type.context, 1)
   conv.ask(type.ask)
 }
 
-exports.searchLostCoverAnswer = (conv, params) => {
-  const { date, datePeriod } = params
-  const day = 24 * 60 * 60 * 1000
-  let startDate
-  let endDate
-  if (!datePeriod) {
-    const d = new Date(date)
-    startDate = new Date(d - 1.5 * day) // 前日一日
-    endDate = new Date(d + 1.5 * day) // 当日 + 次の日
-  } else {
-    startDate = new Date(datePeriod.startDate)
-    endDate = new Date(datePeriod.endDate)
-  }
-
-  if (endDate - startDate > 7 * day) {
-    conv.contexts.set(TYPES.date.context, 1)
-    conv.ask('期間が長すぎます')
+const routeColumn = (conv) => {
+  const filtered = getHeuristicFiltered(conv)
+  if (filtered.length < 3) {
+    sayLast(conv, filtered)
     return
   }
 
-  if (startDate > Date.now()) {
-    // 未来になっている場合は自動で1年戻す
-    startDate.setFullYear(startDate.getFullYear() - 1)
-    endDate.setFullYear(endDate.getFullYear() - 1)
+  const nextColumn = getNextSearchColumn(conv, filtered)
+  if (nextColumn) {
+    route(conv, TYPES[nextColumn])
+  } else {
+    sayLast(conv, filtered)
   }
-
-  const score = dateScore(new Date('2019/06/24'), startDate, endDate)
-  conv.add(`あなたのスコアは${score}です。`)
-  // route
 }
 
 const searchLostCoverAnswer = (conv, cover) => {
-  const score = Number(cover === true)
-  conv.add(`あなたのスコアは${score}です。`)
-  // route
+  conv.data.cover = cover
+  routeColumn(conv)
 }
 
 exports.searchLostCoverAnswerYes = conv => searchLostCoverAnswer(conv, true)
@@ -82,16 +76,14 @@ exports.searchLostTypeAnswer = (conv, params) => {
     conv.ask('スマートフォンかケータイで答えてください。')
     return
   }
-  const score = Number(phone === 'スマートフォン')
-  conv.add(`あなたのスコアは${score}です。`)
-  // route
+  conv.data.type = phone
+  routeColumn(conv)
 }
 
 exports.searchLostMakerAnswer = (conv, params) => {
   const { maker } = params
-  const score = Number(maker === 'SONY')
-  conv.add(`あなたのスコアは${score}です。`)
-  // route
+  conv.data.maker = maker
+  routeColumn(conv)
 }
 
 exports.searchLostDateAnswer = (conv, params) => {
@@ -120,9 +112,8 @@ exports.searchLostDateAnswer = (conv, params) => {
     endDate.setFullYear(endDate.getFullYear() - 1)
   }
 
-  const score = dateScore(new Date('2019/06/24'), startDate, endDate)
-  conv.add(`あなたのスコアは${score}です。`)
-  // route
+  conv.data.date = { startDate, endDate }
+  route(conv, TYPES.color)
 }
 
 exports.searchLostColorAnswer = (conv, params) => {
@@ -133,23 +124,29 @@ exports.searchLostColorAnswer = (conv, params) => {
     conv.ask('色が認識できませんでした。')
     return
   }
-  const score = colorScore(colorRGB, { r: 255, g: 0, b: 0 })
-  conv.add(`あなたのスコアは${score}です。`)
-  // TODO: route
+  conv.data.color = colorRGB
+  routeColumn(conv)
 }
 
 exports.searchLostLocationAnswer = async (conv, params) => {
-  route(conv, TYPES.type)
-  return
-  const { location } = params
+  const query = params.location
+  conv.data.remainingCollumns = ['maker', 'cover', 'type']
   try {
-    const score = await locationScore({ lat: '35.0296014', lng: '135.780722' }, location)
-    conv.add(`あなたのスコアは${score}です。`)
-    // route(conv, TYPES.date)
+    const loc = await getLocation(query)
+    if (!loc) {
+      conv.contexts.set('search_lost-location', 1)
+      conv.ask('場所が見つかりませんでした。')
+      return
+    }
+    const { location, viewport } = loc
+    const viewportLens = convertViewPort(viewport)
+    conv.data.location = { location, viewportLens }
+    route(conv, TYPES.date)
   } catch (e) {
     if (e instanceof TooLargeError) {
       conv.contexts.set('search_lost-location', 1)
       conv.ask('地域が大きすぎます。')
+      return
     }
     throw e
   }
