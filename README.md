@@ -15,6 +15,13 @@ $ firebase functions:config:set lostfound.google_map.token=<token>
 $ firebase functions:config:set lostfound.google_map.locationbias=<locationbias>
 ```
 
+### Prepare data
+
+```sh
+$ (cd colorcode; python3 convert.py ../functions/data/colors.json)
+$ (cd dummydata; python3 dummydata.py ../functions/data/phones.json)
+```
+
 ## Deploy
 
 ```sh
