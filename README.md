@@ -6,7 +6,8 @@ The **experimental** conversational application backend using ...
     - Cloud functions
         -  Dialogflow / Twilio Callbacks
     - Cloud database
-- Twilio
+- Twilio API
+- Google Maps Platform Places API
 
 ## Setup
 
